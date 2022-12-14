@@ -19,7 +19,19 @@ open class DGPersistentContainer: NSPersistentContainer {
         loadPersistentStores(completionHandler: { _, _ in })
     }
 
-    public func perform(usingBlock block: @escaping ((NSManagedObjectContext) -> Void)) {
+    public func performSync(usingBlock block: ((NSManagedObjectContext) -> Void)) {
+        let managedObjectContext: NSManagedObjectContext
+        if Thread.isMainThread {
+            managedObjectContext = viewContext
+        } else {
+            managedObjectContext = newBackgroundContext()
+        }
+        managedObjectContext.performAndWait {
+            block(managedObjectContext)
+        }
+    }
+
+    public func performAsync(usingBlock block: @escaping ((NSManagedObjectContext) -> Void)) {
         let managedObjectContext: NSManagedObjectContext
         if Thread.isMainThread {
             managedObjectContext = viewContext
